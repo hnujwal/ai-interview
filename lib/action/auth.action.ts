@@ -95,3 +95,6 @@ export async function isAuthenticated(){
     const user=await getCurrentuser();
     return !!user;
 }
+
+
+
