@@ -1,34 +1,32 @@
 'use server';
 
-import { db } from "@/firebase/client";
-import { getAuth } from "firebase-admin/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db,auth } from "@/firebase/admin";
 import { cookies } from "next/headers";
 
 export async function signUp(params:SignUpParams) {
     const {uid,name,email}=params;
 
     try{
-        const userRecord = await getDoc(doc(db, 'users', uid));
-        if(userRecord.exists()){
+        const userRecord = await db.collection("user").doc(uid).get();
+        if(userRecord.exists)
             return{
                 success:false,
                 message:'This user already exists.'
             }
-        }
-        await setDoc(doc(db, 'users', uid), {
+        await db.collection("users").doc(uid).set({
             name,
-            email
+            email,
         })
         return{
             success:true,
             message:'Account created successfully.'
         }
     }
-    catch(e: any ){
-            console.error("error creating a user",e);
-            if(e.code === 'auth/email-already-in-use'){
+    catch(error: any ){
+            console.error("error creating a user",error);
+            if(error.code === 'auth/email-already-exists'){
                 return{
+                    success:false,
                     message:'This email is already in use.'
                 }
             }
@@ -43,17 +41,17 @@ export async function signIn(params:SignInParams) {
     const {email,idToken}=params;
 
     try{
-        const userRecord = await getDoc(doc(db, 'users', email));
-        if(!userRecord.exists()){
+        const userRecord = await auth.getUserByEmail(email);
+        if(!userRecord)
             return{
                 success:false,
                 message:'This user does not exist.'
-            }
+
         }
         await setSessionCookie(idToken);
     }
-    catch(e: unknown ){
-            console.error("error signing in", e);
+    catch(error: any){
+            console.error("");
             return{
                 success:false,
                 message:'Something went wrong. Please try again later.'
@@ -63,7 +61,7 @@ export async function signIn(params:SignInParams) {
 }
 export async function setSessionCookie(idToken:string) {
     const cookieStore = await cookies();
-    const sessionCookis=await getAuth().createSessionCookie(idToken,{
+    const sessionCookis=await auth.createSessionCookie(idToken,{
         expiresIn: 60*60*24*7*1000,
     })
     cookieStore.set('session',sessionCookis,{
@@ -80,9 +78,9 @@ export async function getCurrentuser():Promise<User | null> {
     const sessionCookie=cookieStore.get('session')?.value;
     if(!sessionCookie) return null;
     try{
-        const decodetClaims= await getAuth().verifySessionCookie(sessionCookie, true);
-        const userRecord=await getDoc(doc(db, 'users', decodetClaims.uid));
-        if(!userRecord.exists()) return null;
+        const decodetClaims= await auth.verifySessionCookie(sessionCookie, true);
+        const userRecord=await db.collection("user").doc(decodetClaims.uid).get();
+        if(!userRecord.exists) return null;
         return{
             ...userRecord.data(),
             id:userRecord.id
