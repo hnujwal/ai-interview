@@ -14,13 +14,12 @@ async function Home() {
   const user = await getCurrentUser();
 
   const [userInterviews, allInterview] = await Promise.all([
-    getInterviewByUserId(user?.id!),
-    getLatestInterviews({ userId: user?.id! }),
+    user?.id ? getInterviewByUserId(user.id) : Promise.resolve([]),
+    user?.id ? getLatestInterviews({ userId: user.id }) : Promise.resolve([]),
   ]);
 
   const hasPastInterviews = userInterviews?.length! > 0;
   const hasUpcomingInterviews = allInterview?.length! > 0;
-
   return (
     <>
       <section className="card-cta">

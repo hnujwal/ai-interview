@@ -2,17 +2,32 @@
 
 import { db,auth } from "@/firebase/admin";
 import { cookies } from "next/headers";
-
+const one_week=60*60*24*7;
+export async function setSessionCookie(idToken:string) {
+    const cookieStore = await cookies();
+    const sessionCookis=await auth.createSessionCookie(idToken,{
+        expiresIn: one_week*1000,
+    })
+    cookieStore.set('session',sessionCookis,{
+        maxAge:one_week,
+        httpOnly:true,
+        secure:process.env.NODE_ENV === 'production',
+        path:'/',
+        sameSite:'lax'
+    })
+    
+}
 export async function signUp(params:SignUpParams) {
     const {uid,name,email}=params;
 
     try{
-        const userRecord = await db.collection("user").doc(uid).get();
-        if(userRecord.exists)
+        const userRecord = await db.collection("users").doc(uid).get();
+        if(userRecord.exists){
             return{
                 success:false,
                 message:'This user already exists.'
             }
+        }
         await db.collection("users").doc(uid).set({
             name,
             email,
@@ -50,8 +65,8 @@ export async function signIn(params:SignInParams) {
         }
         await setSessionCookie(idToken);
     }
-    catch(error: any){
-            console.error("");
+    catch(error){
+            console.log("");
             return{
                 success:false,
                 message:'Something went wrong. Please try again later.'
@@ -59,27 +74,20 @@ export async function signIn(params:SignInParams) {
     }
 
 }
-export async function setSessionCookie(idToken:string) {
-    const cookieStore = await cookies();
-    const sessionCookis=await auth.createSessionCookie(idToken,{
-        expiresIn: 60*60*24*7*1000,
-    })
-    cookieStore.set('session',sessionCookis,{
-        maxAge:60*60*24*7*1000,
-        httpOnly:true,
-        secure:process.env.NODE_ENV === 'production',
-        path:'/',
-        sameSite:'lax'
-    })
-    
+export async function signOut() {
+  const cookieStore = await cookies();
+
+  cookieStore.delete("session");
 }
+
 export async function getCurrentUser():Promise<User | null> {
     const cookieStore=await cookies();
     const sessionCookie=cookieStore.get('session')?.value;
     if(!sessionCookie) return null;
     try{
         const decodetClaims= await auth.verifySessionCookie(sessionCookie, true);
-        const userRecord=await db.collection("user").doc(decodetClaims.uid).get();
+        const userRecord=await db.collection("users")
+        .doc(decodetClaims.uid).get();
         if(!userRecord.exists) return null;
         return{
             ...userRecord.data(),

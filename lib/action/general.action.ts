@@ -2,14 +2,12 @@ import { feedbackSchema } from "@/constants";
 import {db} from"@/firebase/admin";
 import { generateObject } from "ai";
 import { google } from "@ai-sdk/google";
-import { AwardIcon } from "lucide-react";
-import { success } from "zod";
 export async function getInterviewByUserId(userId:string):Promise<Interview[]  | null> {
     const interviews=await db.collection("interviews").where("userId","==",userId).orderBy('createdAt','desc').get();
     return interviews.docs.map((doc)=>({
         
             id:doc.id,
-            ...doc.data()
+            ...doc.data(),
     })) as Interview[];
 
 }
