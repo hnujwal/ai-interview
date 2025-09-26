@@ -1,6 +1,6 @@
 import Agent from '@/components/Agent';
 import DisplayTechIcons from '@/components/DisplayTechIcons';
-import { getCurrentuser } from '@/lib/action/auth.action';
+import { getCurrentUser } from '@/lib/action/auth.action';
 import { getInterviewById } from '@/lib/action/general.action';
 import { getRandomInterviewCover } from '@/lib/utils';
 import Image from 'next/image';
@@ -9,7 +9,7 @@ import React from 'react'
 
 const page = async ({params}:RouteParams) => {
     const {id}=await params;
-    const user=await getCurrentuser();
+    const user=await getCurrentUser();
     const interview=await getInterviewById(id);
     if(!interview) redirect('/')
   return (
