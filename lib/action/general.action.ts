@@ -74,3 +74,19 @@ export async function createFeedback(params:CreateFeedbackParams){
         console.error("error saving feedback",e)
     }
 }
+export async function getFeedbackByInterviewId(params:GetFeedbackByInterviewIdParams):Promise<Feedback  | null> {
+    const{interviewId,userId}=params;
+    const feedback=await db.collection('feedbck')
+    .orderBy('createdAt','desc')
+    .where('interviewId',"==",userId)
+    .where('userId','==',userId)
+    .limit(1)
+    .get();
+    if(feedback.empty) return null;
+    const feedbackDoc=feedback.docs[0];
+    return{
+        id:feedbackDoc.id,
+        ...feedbackDoc.data()
+    } as Feedback;
+
+}
