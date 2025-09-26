@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
 import { interviewer } from "@/constants";
-import { createFeedback } from "@/lib/action/general.action";
+import { handleCreateFeedback } from "@/lib/action/feedback.action";
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -90,7 +90,7 @@ const Agent = ({
     const handleGenerateFeedback = async (messages: SavedMessage[]) => {
       console.log("handleGenerateFeedback");
 
-      const { success, feedbackId: id } = await createFeedback({
+      const { success, feedbackId: id } = await handleCreateFeedback({
         interviewId: interviewId!,
         userId: userId!,
         transcript: messages,
