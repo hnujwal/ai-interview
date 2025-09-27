@@ -25,7 +25,10 @@ export async function POST(request:Response){
         `,
         })
         const interview={
-            role,type,level,techstack:techstack.splite(','),
+            role:role,
+            type:type,
+            level:level,
+            techstack:techstack.splite(','),
             questions:JSON.parse(questions),
             userId:userid,
             finalized:true,

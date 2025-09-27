@@ -32,12 +32,12 @@ export async function getInterviewById(id:string):Promise<Interview | null> {
 
 }
 export async function createFeedback(params:CreateFeedbackParams){
-    const{interviewId,userId,transcript}=params;
+    const{interviewId,userId,transcript,feedbackId}=params;
     try{
-        const formattedTranscript=transcript.map((sentence:{role:string; content:string;})=>(
+        const formattedTranscript=transcript.map((sentence:{role:string; content:string;})=>
             `- ${sentence.role}: ${sentence.content}\n`
-        )).join('');
-        const {object:{totalScore,categoryScores,strengths,areasForImprovement,finalAssessment}}= await generateObject({
+        ).join('');
+        const {object}= await generateObject({
             model:google('gemini-2.0-flash-001'),
             schema: feedbackSchema,
  prompt: `
@@ -54,34 +54,41 @@ export async function createFeedback(params:CreateFeedbackParams){
         `,
         system:'You are a professional interview.'
         });
-        const feedback=await db.collection('feedback').add({
-            interviewId,
-            userId,
-            totalScore,
-            categoryScores,
-            strengths,
-            areasForImprovement,
-            finalAssessment,
+        const feedback={
+            interviewId:interviewId,
+            userId:userId,
+            totalScore:object.totalScore,
+            categoryScores:object.categoryScores,
+            strengths:object.strengths,
+            areasForImprovement:object.areasForImprovement,
+            finalAssessment:object.finalAssessment,
             createdAt: new Date().toISOString()
-        })
-        return{
-            success:true,
-            feedbackId:feedback.id
         }
-    }catch(e){
-        console.error("error saving feedback",e)
+        let feedbackRef;
+
+    if (feedbackId) {
+      feedbackRef = db.collection("feedback").doc(feedbackId);
+    } else {
+      feedbackRef = db.collection("feedback").doc();
     }
+
+    await feedbackRef.set(feedback);
+
+    return { success: true, feedbackId: feedbackRef.id };
+  } catch (error) {
+    console.error("Error saving feedback:", error);
+    return { success: false };
+  }
 }
 export async function getFeedbackByInterviewId(params:GetFeedbackByInterviewIdParams):Promise<Feedback  | null> {
     const{interviewId,userId}=params;
-    const feedback=await db.collection('feedbck')
-    .orderBy('createdAt','desc')
+    const quertSnapshot=await db.collection('feedback')
     .where('interviewId',"==",userId)
     .where('userId','==',userId)
     .limit(1)
     .get();
-    if(feedback.empty) return null;
-    const feedbackDoc=feedback.docs[0];
+    if(quertSnapshot.empty) return null;
+    const feedbackDoc=quertSnapshot.docs[0];
     return{
         id:feedbackDoc.id,
         ...feedbackDoc.data()

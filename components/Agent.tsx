@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
 import { interviewer } from "@/constants";
-import { handleCreateFeedback } from "@/lib/action/feedback.action";
+import { apiClient } from "@/lib/client-utils";
+
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -90,17 +91,22 @@ const Agent = ({
     const handleGenerateFeedback = async (messages: SavedMessage[]) => {
       console.log("handleGenerateFeedback");
 
-      const { success, feedbackId: id } = await handleCreateFeedback({
-        interviewId: interviewId!,
-        userId: userId!,
-        transcript: messages,
-        feedbackId,
-      });
+      try {
+        const result = await apiClient.createFeedback({
+          interviewId: interviewId!,
+          userId: userId!,
+          transcript: messages,
+          feedbackId,
+        });
 
-      if (success && id) {
-        router.push(`/interview/${interviewId}/feedback`);
-      } else {
-        console.log("Error saving feedback");
+        if (result.success && result.feedbackId) {
+          router.push(`/interview/${interviewId}/feedback`);
+        } else {
+          console.log("Error saving feedback");
+          router.push("/");
+        }
+      } catch (error) {
+        console.error('Failed to create feedback:', error);
         router.push("/");
       }
     };
