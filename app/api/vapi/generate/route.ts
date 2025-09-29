@@ -28,14 +28,14 @@ export async function POST(request:Response){
             role:role,
             type:type,
             level:level,
-            techstack:techstack.splite(','),
+            techstack:techstack.split(','),
             questions:JSON.parse(questions),
             userId:userid,
             finalized:true,
             coverImage: getRandomInterviewCover(),
             createdAt: new Date().toISOString(),
         }
-        await db.collection("interview").add(interview);
+        await db.collection("interviews").add(interview);
         return Response.json({success:true}, {status:200});
     }catch(error){
         console.log(error);
