@@ -81,27 +81,19 @@ const AuthForm = ({ type }: { type: FormType }) => {
           return;
         }
 
-        const result = await signIn({
+         await signIn({
           email,
           idToken,
         });
 
-        console.log('Sign in result:', result);
-
-        if (!result?.success) {
-          toast.error(result?.message || "Sign in failed");
-          return;
-        }
-
         toast.success("Signed in successfully.");
-        window.location.href = "/";
+        router.push("/");
       }
     } catch (error) {
       console.log(error);
       toast.error(`There was an error: ${error}`);
     }
   };
-
   const isSignIn = type === "sign-in";
 
   return (
